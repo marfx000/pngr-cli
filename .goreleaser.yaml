@@ -1,0 +1,68 @@
+# GoReleaser config for the pngr CLI.
+#
+# Cuts cross-platform binaries on a git tag (vX.Y.Z) and publishes them to the
+# GitHub Release. Asset names are pinned to match what pngr-ui's install.sh
+# expects: pngr_<os>_<arch>.tar.gz + pngr_checksums.txt, with the `pngr`
+# binary at the archive root.
+#
+# Local dry run (no publish):  goreleaser release --snapshot --clean
+version: 2
+
+project_name: pngr
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: pngr
+    # main package is at the repo root.
+    main: .
+    binary: pngr
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      # main.version is the var in version.go; -s -w strip the symbol table.
+      - -s -w -X main.version={{ .Version }}
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: pngr
+    # install.sh fetches pngr_<os>_<arch>.tar.gz, so the name must be exactly
+    # that — no version in the filename (it pulls from /releases/latest/).
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  # install.sh looks for pngr_checksums.txt.
+  name_template: "{{ .ProjectName }}_checksums.txt"
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  github:
+    owner: marfx000
+    name: pngr-cli
+  draft: false
+  prerelease: auto
