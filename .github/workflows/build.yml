@@ -1,0 +1,60 @@
+name: Rolling build
+
+# Builds the CLI on every push to main and publishes the artifacts to a single
+# fixed prerelease tagged `latest`, so `curl https://pngr.dev/install.sh | sh`
+# (which defaults to PNGR_VERSION=latest) always installs the newest main.
+#
+# This is a PRERELEASE, so it does NOT become GitHub's "Latest release" and does
+# NOT shadow tagged stable releases at /releases/latest. Stable releases are cut
+# by release.yml on a vX.Y.Z tag and remain the recommended install (PNGR_VERSION=stable).
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write # move the `latest` tag + upload assets
+
+concurrency:
+  group: rolling-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # --snapshot builds dist/ without needing a tag and without publishing.
+      # Archive/checksum names match release.yml (pngr_<os>_<arch>.tar.gz,
+      # pngr_checksums.txt) so install.sh treats both identically.
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --snapshot --clean
+
+      # Recreate the `latest` tag at this commit, then replace the prerelease's
+      # assets. `gh release create` is idempotent via the delete-then-create
+      # below; --prerelease keeps it out of /releases/latest.
+      - name: Publish to the `latest` prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Move the lightweight tag to this commit.
+          git tag -f latest
+          git push -f origin latest
+
+          # Drop the old release (keep the tag we just pushed) so assets don't accrete.
+          gh release delete latest --yes --cleanup-tag=false 2>/dev/null || true
+
+          gh release create latest \
+            dist/*.tar.gz dist/*checksums.txt \
+            --prerelease \
+            --title "Rolling build (main)" \
+            --notes "Automatically built from the latest commit on \`main\` (${GITHUB_SHA::7}). For a pinned, reviewed build install a tagged release: \`PNGR_VERSION=stable\`."

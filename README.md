@@ -21,8 +21,14 @@ go install pngr.dev/cli@latest
 
 The install script downloads the right binary for your OS/arch from the
 [GitHub Releases](https://github.com/marfx000/pngr-cli/releases), verifies its
-checksum, and installs it onto your `PATH`. Override with `PNGR_VERSION` or
-`PNGR_INSTALL_DIR` (see the script header).
+checksum, and installs it onto your `PATH`. By default it installs the rolling
+`latest` build (newest commit on `main`). Select a build with `PNGR_VERSION`:
+
+```bash
+curl -fsSL https://pngr.dev/install.sh | sh                    # latest (rolling main)
+curl -fsSL https://pngr.dev/install.sh | PNGR_VERSION=stable sh # newest tagged release
+curl -fsSL https://pngr.dev/install.sh | PNGR_VERSION=v0.1.0 sh # a specific tag
+```
 
 > `go install` builds from source and produces a binary named `cli`; the
 > release archives and install script name it `pngr`.
@@ -92,14 +98,22 @@ make test-smoke            # pkg/client against a live server (needs PNGR_BASE_U
 make snapshot              # GoReleaser local dry-run → dist/
 ```
 
-Releases are cut by pushing a tag:
+Two release tracks:
 
-```bash
-git tag v0.1.0 && git push origin v0.1.0
-```
+- **Rolling** — every push to `main` triggers `.github/workflows/build.yml`,
+  which builds with GoReleaser `--snapshot` and republishes the fixed `latest`
+  **prerelease**. `pngr version` reports `main-<shortsha>`. This is what
+  `install.sh` installs by default.
+- **Stable** — push a `vX.Y.Z` tag to trigger `.github/workflows/release.yml`,
+  which publishes a normal GitHub Release (the "Latest release", installed via
+  `PNGR_VERSION=stable`):
 
-which triggers `.github/workflows/release.yml` → GoReleaser builds the
-cross-platform archives + checksums and publishes the GitHub Release.
+  ```bash
+  git tag v0.1.0 && git push origin v0.1.0
+  ```
+
+The `latest` prerelease is excluded from GitHub's "Latest release", so rolling
+builds never shadow tagged stable releases.
 
 ## License
 

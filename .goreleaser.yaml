@@ -49,7 +49,9 @@ checksum:
   algorithm: sha256
 
 snapshot:
-  version_template: "{{ incpatch .Version }}-next"
+  # Rolling main builds aren't tagged, so embed an identifiable version
+  # (e.g. `main-a1b2c3d`) into `pngr version` instead of a bogus semver.
+  version_template: "main-{{ .ShortCommit }}"
 
 changelog:
   use: github
