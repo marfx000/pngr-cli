@@ -68,3 +68,32 @@ release:
     name: pngr-cli
   draft: false
   prerelease: auto
+
+brews:
+  # Publishes a Homebrew formula to the dedicated tap repo on each stable tag,
+  # so users can `brew install marfx000/tap/pngr`. GoReleaser commits a
+  # Formula/pngr.rb that points at the just-released darwin/linux archives.
+  - name: pngr
+    repository:
+      owner: marfx000
+      # The repo MUST be named `homebrew-tap`; Homebrew strips the `homebrew-`
+      # prefix, so the tap is referenced as `marfx000/tap`.
+      name: homebrew-tap
+      # The default GITHUB_TOKEN is scoped to pngr-cli only and can't push to a
+      # separate repo, so the release workflow injects a classic PAT (repo
+      # scope) as HOMEBREW_TAP_GITHUB_TOKEN.
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Formula
+    homepage: "https://pngr.dev"
+    description: "CLI and MCP server for pngr.dev — manage URL monitors from the terminal"
+    license: "MIT"
+    # auto = skip pushing the formula on snapshots and prereleases (e.g. RC
+    # tags), so only real vX.Y.Z releases update the tap.
+    skip_upload: auto
+    commit_author:
+      name: goreleaser-bot
+      email: goreleaser-bot@pngr.dev
+    install: |
+      bin.install "pngr"
+    test: |
+      system "#{bin}/pngr", "version"

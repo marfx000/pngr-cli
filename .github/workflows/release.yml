@@ -30,4 +30,9 @@ jobs:
           version: "~> v2"
           args: release --clean
         env:
+          # Creates the GitHub Release + uploads assets in this repo.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Classic PAT (repo scope) that can push the formula to the separate
+          # marfx000/homebrew-tap repo; the default GITHUB_TOKEN can't write
+          # cross-repo. See the `brews` block in .goreleaser.yaml.
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}

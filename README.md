@@ -12,12 +12,18 @@ server code.
 ## Install
 
 ```bash
+# Homebrew (macOS / Linux)
+brew install marfx000/tap/pngr
+
 # Linux / macOS
 curl -fsSL https://pngr.dev/install.sh | sh
 
 # Go
 go install pngr.dev/cli@latest
 ```
+
+The Homebrew formula tracks tagged **stable** releases (not the rolling
+`latest` build) and auto-updates on each `vX.Y.Z` tag.
 
 The install script downloads the right binary for your OS/arch from the
 [GitHub Releases](https://github.com/marfx000/pngr-cli/releases), verifies its
