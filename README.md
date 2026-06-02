@@ -13,7 +13,8 @@ server code.
 
 ```bash
 # Homebrew (macOS / Linux)
-brew install marfx000/tap/pngr
+brew tap marfx000/tap
+brew install pngr
 
 # Linux / macOS
 curl -fsSL https://pngr.dev/install.sh | sh
